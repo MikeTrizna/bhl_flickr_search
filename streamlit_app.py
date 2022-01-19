@@ -74,7 +74,7 @@ def bhl_annoy_search(mode, query, k=5):
                 matching_row = idx
         neighbors = bhl_index.get_nns_by_item(matching_row, k,
                                             include_distances=True)
-        st.experimental_set_query_params(mode = 'flickr_id', id=query)
+        st.experimental_set_query_params(mode = 'flickr_id', flickr_id=query)
     elif mode == 'text':
         query_emb = model.encode([query], show_progress_bar=False)
         neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
@@ -99,7 +99,7 @@ DEPLOY_MODE = 'streamlit_share'
 if DEPLOY_MODE == 'localhost':
     BASE_URL = 'http://localhost:8501/'
 elif DEPLOY_MODE == 'streamlit_share':
-    BASE_URL = 'https://share.streamlit.io/miketrizna/bhl_flickr_search/'
+    BASE_URL = 'https://share.streamlit.io/miketrizna/bhl_flickr_search'
 
 if __name__ == "__main__":
     st.markdown("# BHL Flickr Image Search")
@@ -107,6 +107,7 @@ if __name__ == "__main__":
 
     st.sidebar.markdown('### Search Mode')
     query_params = st.experimental_get_query_params()
+    st.sidebar.write(query_params)
     mode_index = 0
     if 'mode' in query_params:
         search_mode = query_params['mode'][0]
@@ -135,8 +136,8 @@ if __name__ == "__main__":
 
     elif app_mode == 'BHL Flickr ID':
         search_id = '5974846748'
-        if 'id' in query_params:
-            search_id = query_params['id'][0]
+        if 'flickr_id' in query_params:
+            search_id = query_params['flickr_id'][0]
         query = st.text_input('Query ID', search_id)
         search_mode = 'id'
         #closest_k_idx, closest_k_dist = bhl_id_search(id_query, 100)
@@ -163,7 +164,7 @@ if __name__ == "__main__":
                 #next(cols).image(bhl_url, use_column_width=True, caption=idx%5)
                 col_list[idx%5].image(bhl_url, use_column_width=True)
                 flickr_url = f"https://www.flickr.com/photos/biodivlibrary/{bhl_ids['flickr_id']}/"
-                neighbors_url = f"{BASE_URL}?mode=flickr_id&id={bhl_ids['flickr_id']}"
+                neighbors_url = f"{BASE_URL}?mode=flickr_id&flickr_id={bhl_ids['flickr_id']}"
                 #col_list[idx%5].markdown(f'[Flickr Link]({flickr_url}) | [Neighbors]({neighbors_url})')
                 link_html = f'<a href="{flickr_url}" target="_blank">Flickr Link</a> | <a href="{neighbors_url}">Neighbors</a>'
                 col_list[idx%5].markdown(link_html, unsafe_allow_html=True)
