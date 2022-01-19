@@ -67,25 +67,24 @@ def load_flickr_data():
         bhl_flickr_ids = json.load(json_in)
     return bhl_flickr_ids
 
-def bhl_id_search(query_id, k=5):
-    for idx, row in enumerate(bhl_flickr_ids):
-        if str(row['flickr_id']) == query_id:
-            matching_row = idx
-    neighbors = bhl_index.get_nns_by_item(matching_row, k,
-                                          include_distances=True)
-    return neighbors
-
-def bhl_text_search(query_text, k=5):
-    query_emb = model.encode([query_text], show_progress_bar=False)
-    neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
+def bhl_annoy_search(mode, query, k=5):
+    if mode == 'id':
+        for idx, row in enumerate(bhl_flickr_ids):
+            if str(row['flickr_id']) == query:
+                matching_row = idx
+        neighbors = bhl_index.get_nns_by_item(matching_row, k,
+                                            include_distances=True)
+        st.experimental_set_query_params(mode = 'flickr_id', id=query)
+    elif mode == 'text':
+        query_emb = model.encode([query], show_progress_bar=False)
+        neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
+                                            include_distances=True)
+        st.experimental_set_query_params(mode = 'text_search', text=query)
+    elif mode == 'image':
+        query_emb = model.encode([query], show_progress_bar=False)
+        neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
                                             include_distances=True)
     return neighbors
-
-def bhl_image_search(query_image, k=5):
-    query_emb = model.encode([query_image], show_progress_bar=False)
-    neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
-                                            include_distances=True)
-    return neighbors 
 
 EXTERNAL_DEPENDENCIES = {
     "bhl_index.annoy": {
@@ -95,6 +94,7 @@ EXTERNAL_DEPENDENCIES = {
 }
 
 DEPLOY_MODE = 'streamlit_share'
+#DEPLOY_MODE = 'localhost'
 
 if DEPLOY_MODE == 'localhost':
     BASE_URL = 'http://localhost:8501/'
@@ -110,11 +110,13 @@ if __name__ == "__main__":
     mode_index = 0
     if 'mode' in query_params:
         search_mode = query_params['mode'][0]
-        if search_mode == 'flickr_id':
-            mode_index = 1
+        if search_mode == 'text_search':
+            mode_index = 0
+        elif search_mode == 'flickr_id':
+            mode_index = 2
 
     app_mode = st.sidebar.radio("How would you like to search?",
-                        ['Text search', 'BHL Flickr ID', 'Upload Image'],
+                        ['Text search','Upload Image', 'BHL Flickr ID'],
                         index = mode_index)
 
     for filename in EXTERNAL_DEPENDENCIES.keys():
@@ -124,38 +126,47 @@ if __name__ == "__main__":
     bhl_flickr_ids = load_flickr_data()
 
     if app_mode == 'Text search':
-        text_query = st.text_input('Search query', 'a watercolor illustration of an insect with flowers')   
-        closest_k_idx, closest_k_dist = bhl_text_search(text_query, 100)
+        search_text = 'a watercolor illustration of an insect with flowers'
+        if 'text' in query_params:
+            search_text = query_params['text'][0]
+        query = st.text_input('Text query',search_text) 
+        search_mode = 'text'
+        #closest_k_idx, closest_k_dist = bhl_text_search(text_query, 100)
 
     elif app_mode == 'BHL Flickr ID':
         search_id = '5974846748'
         if 'id' in query_params:
             search_id = query_params['id'][0]
-        id_query = st.text_input('Query ID', search_id)
-
-        closest_k_idx, closest_k_dist = bhl_id_search(id_query, 100)
+        query = st.text_input('Query ID', search_id)
+        search_mode = 'id'
+        #closest_k_idx, closest_k_dist = bhl_id_search(id_query, 100)
     
     elif app_mode == 'Upload Image':
+        query = None
         image_file = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
-        closest_k_idx = []
+        search_mode = 'image'
+        #closest_k_idx = []
         if image_file is not None:
-            img = Image.open(image_file)
-            st.image(img,width=100)
-            closest_k_idx, closest_k_dist = bhl_image_search(img, 100)
+            query = Image.open(image_file)
+            st.image(query,width=100,caption='Query image')
+            #closest_k_idx, closest_k_dist = bhl_image_search(img, 100)
 
-    col_list = st.columns(5)
+    if query:
+        closest_k_idx, closest_k_dist = bhl_annoy_search(search_mode, query, 100)
 
-    if len(closest_k_idx):
-        for idx, annoy_idx in enumerate(closest_k_idx):
-            bhl_ids = bhl_flickr_ids[annoy_idx]
-            bhl_url = f"https://live.staticflickr.com/{bhl_ids['server']}/{bhl_ids['flickr_id']}_{bhl_ids['secret']}.jpg"
-            #next(cols).image(bhl_url, use_column_width=True, caption=idx%5)
-            col_list[idx%5].image(bhl_url, use_column_width=True)
-            flickr_url = f"https://www.flickr.com/photos/biodivlibrary/{bhl_ids['flickr_id']}/"
-            neighbors_url = f"{BASE_URL}?mode=flickr_id&id={bhl_ids['flickr_id']}"
-            #col_list[idx%5].markdown(f'[Flickr Link]({flickr_url}) | [Neighbors]({neighbors_url})')
-            link_html = f'<a href="{flickr_url}" target="_blank">Flickr Link</a> | <a href="{neighbors_url}">Neighbors</a>'
-            col_list[idx%5].markdown(link_html, unsafe_allow_html=True)
-            col_list[idx%5].markdown("---")
+        col_list = st.columns(5)
+
+        if len(closest_k_idx):
+            for idx, annoy_idx in enumerate(closest_k_idx):
+                bhl_ids = bhl_flickr_ids[annoy_idx]
+                bhl_url = f"https://live.staticflickr.com/{bhl_ids['server']}/{bhl_ids['flickr_id']}_{bhl_ids['secret']}.jpg"
+                #next(cols).image(bhl_url, use_column_width=True, caption=idx%5)
+                col_list[idx%5].image(bhl_url, use_column_width=True)
+                flickr_url = f"https://www.flickr.com/photos/biodivlibrary/{bhl_ids['flickr_id']}/"
+                neighbors_url = f"{BASE_URL}?mode=flickr_id&id={bhl_ids['flickr_id']}"
+                #col_list[idx%5].markdown(f'[Flickr Link]({flickr_url}) | [Neighbors]({neighbors_url})')
+                link_html = f'<a href="{flickr_url}" target="_blank">Flickr Link</a> | <a href="{neighbors_url}">Neighbors</a>'
+                col_list[idx%5].markdown(link_html, unsafe_allow_html=True)
+                col_list[idx%5].markdown("---")
 
 
