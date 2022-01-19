@@ -74,12 +74,10 @@ def bhl_annoy_search(mode, query, k=5):
                 matching_row = idx
         neighbors = bhl_index.get_nns_by_item(matching_row, k,
                                             include_distances=True)
-        st.experimental_set_query_params(mode = 'flickr_id', flickr_id=query)
     elif mode == 'text':
         query_emb = model.encode([query], show_progress_bar=False)
         neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
                                             include_distances=True)
-        st.experimental_set_query_params(mode = 'text_search', text=query)
     elif mode == 'image':
         query_emb = model.encode([query], show_progress_bar=False)
         neighbors = bhl_index.get_nns_by_vector(query_emb[0], k,
@@ -106,14 +104,13 @@ if __name__ == "__main__":
     st.markdown("Some sort of short blurb here")
 
     st.sidebar.markdown('### Search Mode')
+
     query_params = st.experimental_get_query_params()
-    st.sidebar.write(query_params)
     mode_index = 0
     if 'mode' in query_params:
-        search_mode = query_params['mode'][0]
-        if search_mode == 'text_search':
+        if query_params['mode'][0] == 'text_search':
             mode_index = 0
-        elif search_mode == 'flickr_id':
+        elif query_params['mode'][0] == 'flickr_id':
             mode_index = 2
 
     app_mode = st.sidebar.radio("How would you like to search?",
@@ -128,21 +125,30 @@ if __name__ == "__main__":
 
     if app_mode == 'Text search':
         search_text = 'a watercolor illustration of an insect with flowers'
-        if 'text' in query_params:
-            search_text = query_params['text'][0]
+        if 'mode' in query_params:
+            if query_params['mode'][0] == 'text_search':
+                if 'query' in query_params:
+                    search_text = query_params['query'][0]
+            else:
+                st.experimental_set_query_params()
         query = st.text_input('Text query',search_text) 
         search_mode = 'text'
         #closest_k_idx, closest_k_dist = bhl_text_search(text_query, 100)
 
     elif app_mode == 'BHL Flickr ID':
         search_id = '5974846748'
-        if 'flickr_id' in query_params:
-            search_id = query_params['flickr_id'][0]
+        if 'mode' in st.experimental_get_query_params():
+            if st.experimental_get_query_params()['mode'][0] == 'flickr_id':
+                if 'query' in st.experimental_get_query_params():
+                    search_id = st.experimental_get_query_params()['query'][0]
+            else:
+                st.experimental_set_query_params()
         query = st.text_input('Query ID', search_id)
         search_mode = 'id'
         #closest_k_idx, closest_k_dist = bhl_id_search(id_query, 100)
     
     elif app_mode == 'Upload Image':
+        st.experimental_set_query_params()
         query = None
         image_file = st.file_uploader("Upload Image", type=["png","jpg","jpeg"])
         search_mode = 'image'
@@ -161,11 +167,10 @@ if __name__ == "__main__":
             for idx, annoy_idx in enumerate(closest_k_idx):
                 bhl_ids = bhl_flickr_ids[annoy_idx]
                 bhl_url = f"https://live.staticflickr.com/{bhl_ids['server']}/{bhl_ids['flickr_id']}_{bhl_ids['secret']}.jpg"
-                #next(cols).image(bhl_url, use_column_width=True, caption=idx%5)
                 col_list[idx%5].image(bhl_url, use_column_width=True)
+
                 flickr_url = f"https://www.flickr.com/photos/biodivlibrary/{bhl_ids['flickr_id']}/"
-                neighbors_url = f"{BASE_URL}?mode=flickr_id&flickr_id={bhl_ids['flickr_id']}"
-                #col_list[idx%5].markdown(f'[Flickr Link]({flickr_url}) | [Neighbors]({neighbors_url})')
+                neighbors_url = f"{BASE_URL}?mode=flickr_id&query={bhl_ids['flickr_id']}"
                 link_html = f'<a href="{flickr_url}" target="_blank">Flickr Link</a> | <a href="{neighbors_url}">Neighbors</a>'
                 col_list[idx%5].markdown(link_html, unsafe_allow_html=True)
                 col_list[idx%5].markdown("---")
