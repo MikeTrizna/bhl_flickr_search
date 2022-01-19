@@ -94,9 +94,12 @@ EXTERNAL_DEPENDENCIES = {
     }
 }
 
-DEPLOY_MODE = 'localhost'
+DEPLOY_MODE = 'streamlit_share'
+
 if DEPLOY_MODE == 'localhost':
     BASE_URL = 'http://localhost:8501/'
+elif DEPLOY_MODE == 'streamlit_share':
+    BASE_URL = 'https://share.streamlit.io/miketrizna/bhl_flickr_search/'
 
 if __name__ == "__main__":
     st.markdown("# BHL Flickr Image Search")
