@@ -1,0 +1,5 @@
+streamlit==1.4.0
+python-annoy==1.17.0
+sentence-transformers==2.1.0
+urllib3==1.26.8
+pillow==8.4.0
