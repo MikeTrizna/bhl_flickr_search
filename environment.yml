@@ -1,0 +1,12 @@
+name: BHL_streamlit
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - ftfy=6.0
+  - pillow=8.4
+  - python-annoy=1.17
+  - sentence-transformers=2.1
+  - streamlit=1.4
+  - urllib3=1.26
+prefix: /Users/triznam/miniconda3/envs/BHL_streamlit
