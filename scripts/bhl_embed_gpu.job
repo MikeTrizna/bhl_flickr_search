@@ -1,0 +1,24 @@
+# /bin/sh
+# ----------------Parameters---------------------- #
+#$ -S /bin/sh
+#$ -q lTgpu.q
+#$ -l gpu
+#$ -cwd
+#$ -j y
+#$ -N bhl_embed_gpu
+#$ -o bhl_embed_gpu.log
+#$ -m bea
+#
+# ----------------Modules------------------------- #
+#
+module load ~/modulefiles/miniconda
+source activate flickr_download
+#
+# ----------------Your Commands------------------- #
+#
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME
+echo + NSLOTS = $NSLOTS
+#
+python bhl_clip_embed.py -t 4 -d cuda
+#
+echo = `date` job $JOB_NAME done

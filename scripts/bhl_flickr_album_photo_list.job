@@ -1,0 +1,24 @@
+# /bin/sh
+# ----------------Parameters---------------------- #
+#$ -S /bin/sh
+#$ -q sThC.q
+#$ -l mres=8G,h_data=8G,h_vmem=8G
+#$ -cwd
+#$ -j y
+#$ -N bhl_flickr_album_photo_list
+#$ -o bhl_flickr_album_photo_list.log
+#$ -m bea
+#
+# ----------------Modules------------------------- #
+#
+module load ~/modulefiles/miniconda
+source activate flickr_download
+#
+# ----------------Your Commands------------------- #
+#
+echo + `date` job $JOB_NAME started in $QUEUE with jobID=$JOB_ID on $HOSTNAME
+echo + NSLOTS = $NSLOTS
+#
+python bhl_flickr_album_photo_list.py 
+#
+echo = `date` job $JOB_NAME done

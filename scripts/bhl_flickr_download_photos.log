@@ -1,0 +1,4 @@
++ Tue Jan 11 16:24:34 EST 2022 job bhl_flickr_download_photos started in sThC.q with jobID=2014197 on compute-75-07
++ NSLOTS = 25
+Downloaded 319588 images in 4384.917162384838 s
+= Tue Jan 11 17:37:45 EST 2022 job bhl_flickr_download_photos done
