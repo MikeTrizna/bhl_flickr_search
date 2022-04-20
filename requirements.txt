@@ -1,6 +1,6 @@
-streamlit==1.4
+streamlit==1.8.1
 annoy==1.17
-sentence-transformers==2.1
+sentence-transformers==2.2
 urllib3==1.26
 pillow==8.4
 ftfy==6.0

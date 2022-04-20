@@ -101,7 +101,8 @@ elif DEPLOY_MODE == 'streamlit_share':
 
 if __name__ == "__main__":
     st.markdown("# BHL Flickr Image Search")
-    st.markdown("Some sort of short blurb here")
+    with st.expander("How does this work?", expanded=False):
+        st.write('placeholder')
 
     st.sidebar.markdown('### Search Mode')
 
